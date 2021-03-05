@@ -83,7 +83,27 @@ class TSPSolver:
 
 	def greedy( self,time_allowance=60.0 ):
 		pass
-	
+	set path-array = []
+	set all nodes to visited = false OR for all nodes set visited_array [node_id, false]
+	set curr_node to source_node 
+	shorest_path = find_shortest_path(curr_node)
+	curr_node = shorest_path.dest_id
+	path_array.append (curr_node)
+	set node = visited
+
+	while (curr_node != end_node) {
+		shorest_path = find_shortest_path(curr_node)
+		if (shorest_path != -1){
+			curr_node = shorest_path.dest_id
+			path_array.append (curr_node)
+			set node = visited
+		}
+		else {
+			path_found = false
+			break
+		}
+
+	}
 	
 	
 	''' <summary>
