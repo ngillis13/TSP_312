@@ -17,6 +17,21 @@ from TSPClasses import *
 import heapq
 import itertools
 
+def findShortestPath(city, remainingCities):
+
+	i = 0
+	min = city.costTo(remainingCities[0])
+	minCity = remainingCities[0]
+	index = i
+	while (i < len(remainingCities)):
+		if (city.costTo(remainingCities[i]) < min):
+			min = city.costTo(remainingCities[i])
+			minCity = remainingCities[i]
+			index = i
+		i += 1
+	
+	print (min)
+	return minCity 
 
 
 class TSPSolver:
