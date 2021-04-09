@@ -97,30 +97,35 @@ class TSPSolver:
 	'''
 
 	def greedy( self,time_allowance=60.0 ):
-		def defaultRandomTour( self, time_allowance=60.0 ):
 		results = {}
-		cities = self._scenario.getCities()
-		ncities = len(cities)
-		foundTour = False
-		count = 0
-		bssf = None
 		start_time = time.time()
-		while not foundTour and time.time()-start_time < time_allowance:
-			# create a random permutation
-			perm = np.random.permutation( ncities )
-			route = []
-			# Now build the route using the random permutation
-			for i in range( ncities ):
-				route.append( cities[ perm[i] ] )
-			bssf = TSPSolution(route)
-			count += 1
-			if bssf.cost < np.inf:
-				# Found a valid route
-				foundTour = True
+		unvisitedCities = []
+		path = []
+		i = 0
+		self.cost = 0
+		while i<len(self._scenario.getCities()):
+			unvisitedCities.append(self._scenario.getCities()[i])
+			i+=1
+		currNode=self._scenario.getCities()[0]
+		originNode = currNode
+		#path.append(originNode)
+		index = findShortestPath(currNode, unvisitedCities)
+		self.cost += currNode.costTo(unvisitedCities[index])
+		currNode = unvisitedCities.pop(index)
+		path.append(currNode)
+		while len(unvisitedCities) > 0:
+			index = findShortestPath(currNode, unvisitedCities)
+			self.cost += currNode.costTo(unvisitedCities[index])
+			currNode = unvisitedCities.pop(index)
+			path.append(currNode)
+		
 		end_time = time.time()
-		results['cost'] = bssf.cost if foundTour else math.inf
+
+		bssf = TSPSolution(path)
+
+		results['cost'] = self.cost
 		results['time'] = end_time - start_time
-		results['count'] = count
+		results['count'] = len(path)
 		results['soln'] = bssf
 		results['max'] = None
 		results['total'] = None
