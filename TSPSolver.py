@@ -195,7 +195,7 @@ class TSPSolver:
 		
 	def fancy( self,time_allowance=60.0 ):
 
-		# we start by taking each city and adding up all the pths connected to that city
+		# we start by taking each city and adding up all the paths connected to that city
 		# then we sort the cities by this total distance with the largest distance being at 
 		# the top of the list
 
@@ -207,6 +207,9 @@ class TSPSolver:
 		# node with the shortest cost that has an edge connecting to each of the current nodes in the group
 		# Repeat the process until there are no nodes left that connect to all current nodes in the group and/or cap it at a certain length
 		# Continue the process until each node is in a subgroup
+
+
+
 
 		# Sort the subgroups by number of nodes
 
@@ -221,6 +224,10 @@ class TSPSolver:
 		# keep going until all subgroups have been visited. thus, with each subgroup being only visited once, 
 		# each subgroup must have been visited, and a path now exist. there is the chance that not every subgroup
 		# can be visited, but with the penelty included in the cost, we hope to avoid that
+
+
+
+
 
 		# now we should have start and end nodes within each subgroup. now, within each subgroup we use a 
 		# algorithm to find the shorest path within the group, starting and ending at the start and end nodes
