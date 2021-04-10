@@ -17,6 +17,7 @@ from TSPClasses import *
 import heapq
 import itertools
 
+
 def findShortestPath(city, remainingCities):
 
 	i = 0
@@ -34,9 +35,19 @@ def findShortestPath(city, remainingCities):
 	return index 
 
 
+class subGroup:
+	def __init__(self, citiesArray):
+		self.citiesArray = citiesArray
+		self.startNode = None
+		self.endNode = None
+		self.pathArray = ([])
+		self.totalDistance = 0
+
+
 class TSPSolver:
 	def __init__( self, gui_view ):
 		self._scenario = None
+		self.cost = 0
 
 	def setupWithScenario( self, scenario ):
 		self._scenario = scenario
@@ -97,6 +108,7 @@ class TSPSolver:
 	'''
 
 	def greedy( self,time_allowance=60.0 ):
+		
 		results = {}
 		start_time = time.time()
 		unvisitedCities = []
@@ -132,7 +144,30 @@ class TSPSolver:
 		results['pruned'] = None
 		return results
 
-	}
+		
+		
+
+	#set path-array = []
+	#set all nodes to visited = false OR for all nodes set visited_array [node_id, false]
+	#set curr_node to source_node 
+	#shorest_path = find_shortest_path(curr_node)
+	#curr_node = shorest_path.dest_id
+	#path_array.append (curr_node)
+	#set node = visited
+#
+	#while (curr_node != end_node) {
+	#	shorest_path = find_shortest_path(curr_node)
+	#	if (shorest_path != -1){
+	#		curr_node = shorest_path.dest_id
+	#		path_array.append (curr_node)
+	#		set node = visited
+	#	}
+	#	else {
+	#		path_found = false
+	#		break
+	#	}
+#
+	#}
 	
 	
 	''' <summary>
@@ -159,6 +194,49 @@ class TSPSolver:
 	'''
 		
 	def fancy( self,time_allowance=60.0 ):
+
+		# we start by taking each city and adding up all the pths connected to that city
+		# then we sort the cities by this total distance with the largest distance being at 
+		# the top of the list
+
+		# we then take the first city (with largest distance) and sort all the cities it's connected
+		# to (taking out the ones already in a group) by distance starting with the smallest. 
+
+		# Start by adding the next closest node to our starting node. This is the beginning of our group.
+		# To add to the group, we go through the list (of connected nodes sorted by distance) and find the 
+		# node with the shortest cost that has an edge connecting to each of the current nodes in the group
+		# Repeat the process until there are no nodes left that connect to all current nodes in the group and/or cap it at a certain length
+		# Continue the process until each node is in a subgroup
+
+		# Sort the subgroups by number of nodes
+
+		# Starting with the subgroup with the fewest nodes, look at all outbound edges leading to nodes in
+		# different groups (making sure that group hasn't been visited before). Choose the edge with the 
+		# shortest distance, with a penelty for going to larger groups (for instance, times each cost by 1/2 of 
+		# the number of cities in the group). 
+		
+		# The start and end of the edge we choose determines the enter and exit nodes
+		# for these two subgroups
+
+		# keep going until all subgroups have been visited. thus, with each subgroup being only visited once, 
+		# each subgroup must have been visited, and a path now exist. there is the chance that not every subgroup
+		# can be visited, but with the penelty included in the cost, we hope to avoid that
+
+		# now we should have start and end nodes within each subgroup. now, within each subgroup we use a 
+		# algorithm to find the shorest path within the group, starting and ending at the start and end nodes
+		# we include the path as an array within the grouping object
+
+		# finally, we add the path together, adding the connections from group to group with the path arrays
+		# within the groupings. we also count the cost in the same manner. 
+
+
+		# subgroup_class:
+			# array of cities (actual cities, not just an index)
+			# start city
+			# end city
+			# path_array (actual cities, not just an index)
+			# total distance 
+
 		pass
 		
 
