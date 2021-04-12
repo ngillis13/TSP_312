@@ -70,7 +70,7 @@ class subGroup:
 		    self.pathArray.append(self.startNode)
 		    currentCity = self.startNode
 		    while len(tempArray) > 0:
-			index, pathFound = findShortestPath(currentCity, tempArray)
+			index = findShortestPath(currentCity, tempArray)
 			currentCity = tempArray.pop(index)
 			self.pathArray.append(currentCity)
 		    self.pathArray.append(self.endNode)
