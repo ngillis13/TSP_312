@@ -56,6 +56,25 @@ class subGroup:
 		self.totalDistance = 0
 		self.targetGroup = None
 		self.name = citiesArray[0]._name
+		
+	def find_shortest_path(self):
+		if len(self.citiesArray) == 1:
+		    self.pathArray.append(self.citiesArray[0])
+		elif len(self.citiesArray) == 2:
+		    self.pathArray.append(self.citiesArray[0])
+		    self.pathArray.append(self.citiesArray[1])
+		else:
+		    tempArray = self.citiesArray.copy()
+		    tempArray.pop(tempArray.index(self.startNode))
+		    tempArray.pop(tempArray.index(self.endNode))
+		    self.pathArray.append(self.startNode)
+		    currentCity = self.startNode
+		    while len(tempArray) > 0:
+			index, pathFound = findShortestPath(currentCity, tempArray)
+			currentCity = tempArray.pop(index)
+			self.pathArray.append(currentCity)
+		    self.pathArray.append(self.endNode)
+
 
 
 class TSPSolver:
@@ -446,7 +465,31 @@ class TSPSolver:
 		#
 		#
 		
+		finalPath = []
+		for i in range(len(groups)):
+		    groups[i].find_shortest_path()
+
+		tempArray = groups.copy()
+		currentGroup = tempArray[0]
+		while len(tempArray) > 0:
+		    for i in range(len(currentGroup.pathArray)):
+			finalPath.append(currentGroup.pathArray[i])
+		    for i in range(len(tempArray)):
+			if currentGroup.targetGroup == tempArray[i].startNode:
+			    currentGroup = tempArray[i]
+			    break
+
+		bssf = TSPSolution(finalPath)
+
 		###############################################################################################################################################################################
-		pass
+
+		results['cost'] = bssf.cost
+		results['time'] = None
+		results['count'] = None
+		results['soln'] = bssf
+		results['max'] = None
+		results['total'] = None
+		results['pruned'] = None
+		return results
 
 
