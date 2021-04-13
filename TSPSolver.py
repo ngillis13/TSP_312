@@ -471,12 +471,14 @@ class TSPSolver:
 
 		tempArray = groups.copy()
 		currentGroup = tempArray[0]
+		tempArray.pop(0)
 		while len(tempArray) > 0:
 		    for i in range(len(currentGroup.pathArray)):
 			finalPath.append(currentGroup.pathArray[i])
 		    for i in range(len(tempArray)):
-			if currentGroup.targetGroup == tempArray[i].startNode:
+			if currentGroup.targetGroup == tempArray[i]:
 			    currentGroup = tempArray[i]
+			    tempArray.pop(i)
 			    break
 
 		bssf = TSPSolution(finalPath)
