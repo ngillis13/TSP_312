@@ -17,6 +17,62 @@ from TSPClasses import *
 import heapq
 import itertools
 
+#this funtion takes a matrix and recues it, first by row and then by col, to make sure that all have 0s, 
+#and then adds up the cost. returnes the new matrix and the cost
+
+def reduceMatrix(matrix, N):
+	lowerBound = 0
+	matrixCopy = np.copy(matrix)
+	for i in range (N):
+		min = matrixCopy[i].min()
+		for j in range (N):
+			matrixCopy[i][j] = matrixCopy[i][j] - min
+			lowerBound += min
+
+	minList = np.amin(matrixCopy, axis=0) 
+	for i in range (len(minList)):
+		min = minList[i]
+		if (min != 0 and min != np.inf):
+			for j in range (N):
+				matrixCopy[j][i] = matrixCopy[j][i] - min
+				lowerBound += min
+
+	return matrixCopy, lowerBound
+
+#this functions creates a new data object called state. it takes in a matrix, start node, end node, 
+#size of one side of the matrix, the current lower bound, and the current path. it then calculates the 
+#new matrix, new bound, and new path and makes a state object from the given information. 
+#then returns the object
+
+def makeState (matrix, start, end, N, lowerBound, path):
+	lowerCopy = lowerBound
+	matrixCopy = np.copy(matrix)
+	newPath = path.copy()
+	lowerCopy += matrixCopy[start][end]
+	matrixCopy[end][start] = np.inf
+	for i in range (N):
+		matrixCopy[start][i] = np.inf
+		matrixCopy[i][end] = np.inf
+
+	newPath.append(end + 1)
+
+	state = matrixState(matrixCopy, lowerCopy, newPath)
+
+	return state
+
+#this gets the BSSF for the first iteration (upper bound)
+
+def getBSSF(matrix, N, lowerBound):
+	sum = 0
+	count = 0
+	for i in range (N):
+		for j in range (N):
+			if (matrix[i][j] != np.inf):
+				sum += matrix[i][j]
+				count += 1
+	dist = (sum/count) * N
+	return (lowerBound + dist) * 2
+
 
 def findShortestPath(city, remainingCities):
 
@@ -31,8 +87,7 @@ def findShortestPath(city, remainingCities):
 			index = i
 		i += 1
 	
-	print (min)
-	return index 
+	return index
 
 
 
@@ -46,6 +101,15 @@ def findGroup(city, Groups):
 				return Groups[i]
 
 	return None
+
+#an object to conatin the state. contains a matrix, a distance, and a path
+class matrixState:
+	def __init__(self, matrix, distance, path):
+		self.matrix = matrix
+		self.distance = distance
+		self.path = path
+	def getDistance():
+		return self.distance
 
 class subGroup:
 	def __init__(self, citiesArray):
@@ -61,20 +125,19 @@ class subGroup:
 		if len(self.citiesArray) == 1:
 		    self.pathArray.append(self.citiesArray[0])
 		elif len(self.citiesArray) == 2:
-		    self.pathArray.append(self.citiesArray[0])
-		    self.pathArray.append(self.citiesArray[1])
-		else:
-		    tempArray = self.citiesArray.copy()
-		    tempArray.pop(tempArray.index(self.startNode))
-		    tempArray.pop(tempArray.index(self.endNode))
 		    self.pathArray.append(self.startNode)
-		    currentCity = self.startNode
-		    while len(tempArray) > 0:
-			index = findShortestPath(currentCity, tempArray)
-			currentCity = tempArray.pop(index)
-			self.pathArray.append(currentCity)
 		    self.pathArray.append(self.endNode)
-
+		else:
+			tempArray = self.citiesArray.copy()
+			tempArray.pop(tempArray.index(self.startNode))
+			tempArray.pop(tempArray.index(self.endNode))
+			self.pathArray.append(self.startNode)
+			currentCity = self.startNode
+			while len(tempArray) > 0:
+				index = findShortestPath(currentCity, tempArray)
+				currentCity = tempArray.pop(index)
+				self.pathArray.append(currentCity)
+			self.pathArray.append(self.endNode)
 
 
 class TSPSolver:
@@ -213,18 +276,151 @@ class TSPSolver:
 	'''
 		
 	def branchAndBound( self, time_allowance=60.0 ):
-		pass
+		#track fpr report
+		maxSatesStored = 0
+		totalStates = 1
+		BSSFUpdates = 1
+		statesPruned = 0
+
+		optimal = True
 
 
+		start_time = time.time()
+		
+		
+		citiesList = self._scenario.getCities()
 
-	''' <summary>
-		This is the entry point for the algorithm you'll write for your group project.
-		</summary>
-		<returns>results dictionary for GUI that contains three ints: cost of best solution, 
-		time spent to find best solution, total number of solutions found during search, the 
-		best solution found.  You may use the other three field however you like.
-		algorithm</returns> 
-	'''
+		N = len(citiesList)
+		#number of solutions
+		count = 0
+
+		#get a number list to represent all cities
+		allCities = ([])
+		for i in range (N):
+			allCities.append(i + 1)
+
+		#make the first basic matrix
+		baseMatrix = np.full((N, N), np.inf)
+
+		for i in range (N):
+			for j in range (N):
+				baseMatrix[i][j] = citiesList[i].costTo(citiesList[j])
+
+		#reduce basic matrix and lowerbound
+		baseMatrix, lowerBound = reduceMatrix(baseMatrix, N)
+
+		path = ([1])
+		#cities left will be repopulated and recalculated every interation
+		remainingCities = allCities.copy()
+		remainingCities.remove(1)
+
+		#create the first state
+		baseSate = matrixState(baseMatrix, lowerBound, path)
+
+		BSSF =  getBSSF(baseMatrix, N, lowerBound)
+		bestPath = ([])
+		queue = ([])
+
+		#this keeps track of where you are going from in each itteration 
+		currCity = path[len(path) - 1]
+
+		for i in range (len(remainingCities)):
+			
+			#make a state for each possibale route 
+			nextState = makeState(baseMatrix, currCity - 1, remainingCities[i] - 1, N, lowerBound, path)
+			totalStates += 1
+			#decide if you should prune state or not
+			if (nextState.distance < BSSF):
+				queue.append(nextState)
+			else :
+				statesPruned += 1
+		#calculate max number of states stored
+		if (len(queue) > maxSatesStored):
+			maxSatesStored = len(queue)
+
+		#store queue, and then trim it to only 500
+		queue.sort(key=lambda x: x.distance)
+
+		if (len(queue) > 500):
+			queue = queue[:500]
+
+		#now you just go until the queue is empty (you have seen all non-pruned states)
+		#or until you get interupted (see below)
+		while (len(queue) != 0):
+
+			currState = queue.pop()
+			currMatrix = currState.matrix
+			currBound = currState.distance
+			currPath = currState.path
+
+			#find which cities have not been visited yet
+			currRemCities = allCities.copy()
+			for i in range (len(currPath)):
+				currRemCities.remove(currPath[i])
+
+			#if you have reached the end of a line, and all cities have been visited, check to see
+			#the cost, if it's lower then BSSF, set new BSSF
+			if (len(currPath) >= N):
+				count += 1
+				if (currBound < BSSF):
+					BSSF = currBound
+					bestPath = currPath
+					BSSFUpdates += 1
+
+			#if not the end of the line, keep going
+			else:
+				currCity = currPath[len(currPath) - 1]
+
+				for i in range (len(remainingCities)):
+					#once again, make new states for all that haven't been visited
+					nextState = makeState(currMatrix, currCity - 1, remainingCities[i] - 1, N, currBound, currPath)
+					totalStates += 1
+					if (nextState.distance < BSSF):
+						queue.append(nextState)
+					else :
+						statesPruned += 1
+
+				if (len(queue) > maxSatesStored):
+					maxSatesStored = len(queue)
+
+				queue.sort(key=lambda x: x.distance)
+
+				if (len(queue) > 500):
+					queue = queue[:500]
+			#here we make sure that we don't go over the given time. if we break, we set optimal to
+			#false since we don't know if we found the optimal solution
+			if (time.time() - start_time > time_allowance):
+				optimal = False
+				break
+
+		#set the results
+		
+		end_time = time.time()
+		results = {}
+		results['cost'] = BSSF
+		results['time'] = end_time - start_time
+		results['count'] = count
+
+		cities = []
+		for i in range (len (bestPath)):
+			cities.append(citiesList[bestPath[i] - 1])
+		solution = TSPSolution(cities)
+
+		results['soln'] = solution
+		results['max'] = None
+		results['total'] = None
+		results['pruned'] = None
+
+		#print for reporting 
+
+		print("optimal solution = ", optimal)
+		print ("max Sates Stored = ", maxSatesStored)
+		print("BSSF Updates = ", BSSFUpdates)
+		print("total States = ", totalStates)
+		print("states Pruned = ", statesPruned)
+		 
+		return results
+	
 		
 	def fancy( self,time_allowance=60.0 ):
 
@@ -240,7 +436,8 @@ class TSPSolver:
 		# then we sort the cities by this total distance with the largest distance being at 
 		# the top of the list
 		###############################################################################################################################################################################
-
+		
+		start_time = time.time()
 		# Here I initialize a cities list and I initialize a totalDistances list with each of those cities total edge distances
 		cities = self._scenario.getCities()
 		totalDistances = []
@@ -394,35 +591,37 @@ class TSPSolver:
 
 			# itterate through the cities in the citiesArray contained in the group object
 			for j in range (len(currGroup.citiesArray)):
-				currCity = currGroup.citiesArray[j]
-				pathOptions = sortedEdgeDistances[currCity]
+				if (currGroup.citiesArray[j] != currGroup.startNode or len(currGroup.citiesArray) == 1):
+					currCity = currGroup.citiesArray[j]
+					pathOptions = sortedEdgeDistances[currCity]
 
-				# use pathOptions here to itterate through every possible connection from each city in the group
-				for k in range (len(pathOptions)):
-					# use function findGroup to get the group object containg the target node
-					# we are currently testing
-					targetGroup = findGroup(pathOptions[k], groups)
-					
-					# here we need to make sure that the path we are testing isn't: 
-					# 1. to a group that already has a path to it
-					# 2. going back to it's own group
-					# 3. isn't connecting to the end node of the targetGroup (use endCities array) unless only 
-					# one city in group
-					if ((targetGroup not in vistedGroups) 
-					and targetGroup != currGroup 
-					and (pathOptions[k] not in endCities or len(targetGroup.citiesArray) == 1)):
+					# use pathOptions here to itterate through every possible connection from each city in the group
+					for k in range (len(pathOptions)):
+						# use function findGroup to get the group object containg the target node
+						# we are currently testing
+						targetGroup = findGroup(pathOptions[k], groups)
 
-						# here we set the penalty for larger groups, calculate the cost, and if it's lower then	
-						# the current minimum, set it as the new min. we also set the pathPair values to 
-						# the cities we are going from and to, and store what group it will be traversing to  
-						penalty = (len(targetGroup.citiesArray) / 2)
-						cost = currCity.costTo(pathOptions[k])
-						if (cost * penalty < min):
-							
-							 pathPair[0] = currCity	# end node of current group
-							 pathPair[1] = pathOptions[k] # start node of target group
-							 finalTargetGroup = targetGroup
-							 min = cost * penalty
+						# here we need to make sure that the path we are testing isn't: 
+						# 1. to a group that already has a path to it
+						# 2. going back to it's own group
+						# 3. isn't connecting to the end node of the targetGroup (use endCities array) unless only 
+						# one city in group
+						if ((targetGroup not in vistedGroups) 
+						and targetGroup != currGroup 
+						and (pathOptions[k] not in endCities or len(targetGroup.citiesArray) == 1)
+						and targetGroup.targetGroup != currGroup):
+
+							# here we set the penalty for larger groups, calculate the cost, and if it's lower then	
+							# the current minimum, set it as the new min. we also set the pathPair values to 
+							# the cities we are going from and to, and store what group it will be traversing to  
+							penalty = (len(targetGroup.citiesArray) / 2)
+							cost = currCity.costTo(pathOptions[k])
+							if (cost * penalty < min):
+
+								pathPair[0] = currCity	# end node of current group
+								pathPair[1] = pathOptions[k] # start node of target group
+								finalTargetGroup = targetGroup
+								min = cost * penalty
 
 			# once we have been through all possible solutions, we set our group vaiables				
 
@@ -469,24 +668,47 @@ class TSPSolver:
 		for i in range(len(groups)):
 		    groups[i].find_shortest_path()
 
-		tempArray = groups.copy()
-		currentGroup = tempArray[0]
-		tempArray.pop(0)
-		while len(tempArray) > 0:
-		    for i in range(len(currentGroup.pathArray)):
-			finalPath.append(currentGroup.pathArray[i])
-		    for i in range(len(tempArray)):
-			if currentGroup.targetGroup == tempArray[i]:
-			    currentGroup = tempArray[i]
-			    tempArray.pop(i)
-			    break
+
+		currentGroup = groups[0]
+		while (len(finalPath) < len(cities)):
+			for i in range(len(currentGroup.pathArray)):
+				finalPath.append(currentGroup.pathArray[i])
+			currentGroup = currentGroup.targetGroup
+
+
+
+		
+
+		#tempArray = groups.copy()
+		#currentGroup = tempArray[0]
+		#while len(tempArray) > 0:
+		#	for i in range(len(currentGroup.pathArray)):
+		#		finalPath.append(currentGroup.pathArray[i])
+#
+		#	for i in range(len(tempArray)):
+		#		if currentGroup.targetGroup == tempArray[i].startNode:
+		#			currentGroup = tempArray[i]
+		#			tempArray.pop(i)
+		#			break
+
+		for i in range (len(finalPath) - 1):
+			test = finalPath[i].costTo(finalPath[i + 1])
+			if (test == np.inf):
+				print ("inf path: i = ", i)
+		
+
+
+		test = finalPath[len(finalPath) - 1].costTo(finalPath[0])
 
 		bssf = TSPSolution(finalPath)
 
+		end_time = time.time()
+
 		###############################################################################################################################################################################
 
+		results = {}
 		results['cost'] = bssf.cost
-		results['time'] = None
+		results['time'] = end_time - start_time
 		results['count'] = None
 		results['soln'] = bssf
 		results['max'] = None
