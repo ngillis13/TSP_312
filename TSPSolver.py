@@ -521,7 +521,7 @@ class TSPSolver:
 						isValid = True
 						# Here I check if the node I am looking at connects to all other nodes currently in this group
 						for k in range(len(currGroup)):
-							if (sortedEdgeDistances[sortedCities[i]][j].costTo(currGroup[k]) == math.inf):
+							if (sortedEdgeDistances[sortedCities[i]][j].costTo(currGroup[k]) == math.inf) :
 								isValid = False
 						# If it does, I add the node I am looking at to the group and mark it as in a group
 						if (isValid == True):
@@ -694,7 +694,15 @@ class TSPSolver:
 		for i in range (len(finalPath) - 1):
 			test = finalPath[i].costTo(finalPath[i + 1])
 			if (test == np.inf):
-				print ("inf path: i = ", i)
+				test2 = finalPath[i + 1].costTo(finalPath[i])
+				if (test2 == np.inf):
+					print ("inf path: i = ", i)
+					print(test)
+					print(test2)
+				else:
+					temp = finalPath[i]
+					finalPath[i] = finalPath[i + 1]
+					finalPath[i + 1] = temp
 		
 
 
@@ -715,5 +723,3 @@ class TSPSolver:
 		results['total'] = None
 		results['pruned'] = None
 		return results
-
-
